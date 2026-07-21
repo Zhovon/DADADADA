@@ -29,7 +29,8 @@ export function Hud({ hud }: { hud: RefObject<HudState> }) {
         else g = "6"
         gear.current.textContent = g
       }
-      if (lap.current) lap.current.textContent = s.lap.toString()
+      if (lap.current)
+        lap.current.textContent = `${Math.min(s.lap, s.totalLaps)}/${s.totalLaps}`
       if (current.current) current.current.textContent = formatTime(s.currentLapMs)
       if (last.current) last.current.textContent = formatTime(s.lastLapMs)
       if (best.current) best.current.textContent = formatTime(s.bestLapMs)

@@ -1,15 +1,20 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { Canvas } from "@react-three/fiber"
 import * as THREE from "three"
-import { createHudState, formatTime } from "@/lib/game-store"
+import { createHudState, formatTime, loadBestLap } from "@/lib/game-store"
 import { LEVELS } from "@/lib/levels"
 import { CARS, getCar } from "@/lib/cars"
 import { Scene } from "./scene"
 import { Hud } from "./hud"
 
 type Phase = "menu" | "playing" | "win"
+
+function subscribeToStorage(cb: () => void) {
+  window.addEventListener("storage", cb)
+  return () => window.removeEventListener("storage", cb)
+}
 
 export function RacingGame() {
   const [phase, setPhase] = useState<Phase>("menu")
@@ -19,6 +24,14 @@ export function RacingGame() {
   const selectedCar = getCar(carId)
   const [hasPlayed, setHasPlayed] = useState(false)
   const hud = useRef(createHudState())
+
+  // persisted best lap for the selected track; re-read on every render
+  // (phase/track changes) and on cross-tab storage events
+  const storedBest = useSyncExternalStore(
+    subscribeToStorage,
+    () => loadBestLap(levelId),
+    () => 0,
+  )
 
   const start = useCallback(() => {
     setRunId((id) => id + 1)
@@ -65,6 +78,47 @@ export function RacingGame() {
         </>
       )}
 
+      {phase === "win" && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#2a2f45]/40 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-sm rounded-3xl border border-white/50 bg-[#fff1f6]/95 p-8 text-center shadow-2xl">
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#ff6f91]">
+              Race Complete
+            </p>
+            <h2 className="mt-2 font-mono text-4xl font-black tracking-tight text-[#2a2f45]">
+              FINISH!
+            </h2>
+
+            <div className="mt-6 grid grid-cols-1 gap-2 font-mono text-left">
+              <div className="flex items-baseline justify-between rounded-2xl bg-[#2a2f45] px-4 py-3 text-white">
+                <span className="text-[10px] uppercase tracking-widest text-[#9be7c4]">Best Lap</span>
+                <span className="text-lg font-bold tabular-nums">{formatTime(hud.current.bestLapMs)}</span>
+              </div>
+              <div className="flex items-baseline justify-between rounded-2xl bg-[#2a2f45] px-4 py-3 text-white">
+                <span className="text-[10px] uppercase tracking-widest text-white/60">Last Lap</span>
+                <span className="text-lg font-bold tabular-nums">{formatTime(hud.current.lastLapMs)}</span>
+              </div>
+              <div className="flex items-baseline justify-between rounded-2xl bg-[#2a2f45] px-4 py-3 text-white">
+                <span className="text-[10px] uppercase tracking-widest text-[#ffd0dc]">Drift Score</span>
+                <span className="text-lg font-bold tabular-nums">{hud.current.driftScore.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={start}
+              className="mt-6 w-full rounded-2xl bg-[#ff6f91] px-6 py-4 font-mono text-lg font-bold uppercase tracking-wider text-white shadow-lg transition hover:bg-[#ff5580] active:scale-[0.98]"
+            >
+              Race Again
+            </button>
+            <button
+              onClick={toMenu}
+              className="mt-2 w-full rounded-2xl border-2 border-[#2a2f45]/20 px-6 py-3 font-mono text-sm font-bold uppercase tracking-wider text-[#2a2f45] transition hover:bg-white/60"
+            >
+              Back to Menu
+            </button>
+          </div>
+        </div>
+      )}
+
       {phase === "menu" && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#2a2f45]/40 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-3xl border border-white/50 bg-[#fff1f6]/95 p-8 text-center shadow-2xl">
@@ -79,14 +133,14 @@ export function RacingGame() {
               on the circuit.
             </p>
 
-            {hasPlayed && (
+            {(hasPlayed || storedBest > 0) && (
               <div className="mt-6 grid grid-cols-2 gap-3 font-mono">
                 <div className="rounded-2xl bg-[#2a2f45] px-4 py-3 text-left text-white">
                   <div className="text-[10px] uppercase tracking-widest text-[#9be7c4]">
                     Best Lap
                   </div>
                   <div className="text-lg font-bold tabular-nums">
-                    {formatTime(hud.current.bestLapMs)}
+                    {formatTime(storedBest)}
                   </div>
                 </div>
                 <div className="rounded-2xl bg-[#2a2f45] px-4 py-3 text-left text-white">

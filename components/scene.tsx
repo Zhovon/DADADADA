@@ -5,7 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber"
 import * as THREE from "three"
 import { createTrack, queryTrack } from "@/lib/track"
 import { CarPhysics } from "@/lib/car-physics"
-import type { HudState } from "@/lib/game-store"
+import { loadBestLap, saveBestLap, type HudState } from "@/lib/game-store"
 import { useControls } from "@/lib/use-controls"
 import { Car } from "./car"
 import { TrackMesh } from "./track-mesh"
@@ -28,7 +28,7 @@ interface SceneProps {
 }
 
 const GATES = [0.25, 0.5, 0.75]
-const LAPS_TO_WIN = 1
+const LAPS_TO_WIN = 3
 
 export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) {
   const level = useMemo(() => getLevel(levelId), [levelId])
@@ -77,8 +77,10 @@ export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) 
     started.current = true // Start immediately
     prevFrac.current = queryTrack(track, car.x, car.z).frac
     hud.current.lap = 1 // Start on lap 1
+    hud.current.totalLaps = LAPS_TO_WIN
     hud.current.currentLapMs = 0
     hud.current.lastLapMs = 0
+    hud.current.bestLapMs = loadBestLap(level.id)
     hud.current.driftScore = 0
     hud.current.multiplier = 1
     hud.current.speed = 0
@@ -172,6 +174,7 @@ export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) 
             hud.current.lastLapMs = lapMs
             if (hud.current.bestLapMs === 0 || lapMs < hud.current.bestLapMs) {
               hud.current.bestLapMs = lapMs
+              saveBestLap(level.id, lapMs)
             }
             hud.current.lap += 1
             if (hud.current.lap > LAPS_TO_WIN) {
