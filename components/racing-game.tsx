@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber"
 import * as THREE from "three"
 import { createHudState, formatTime } from "@/lib/game-store"
 import { LEVELS } from "@/lib/levels"
+import { CARS, getCar } from "@/lib/cars"
 import { Scene } from "./scene"
 import { Hud } from "./hud"
 
@@ -13,7 +14,9 @@ type Phase = "menu" | "playing" | "win"
 export function RacingGame() {
   const [phase, setPhase] = useState<Phase>("menu")
   const [levelId, setLevelId] = useState("sakura")
+  const [carId, setCarId] = useState("lambo")
   const [runId, setRunId] = useState(0)
+  const selectedCar = getCar(carId)
   const [hasPlayed, setHasPlayed] = useState(false)
   const hud = useRef(createHudState())
 
@@ -47,7 +50,7 @@ export function RacingGame() {
         gl={{ antialias: true, powerPreference: "high-performance" }}
         camera={{ fov: 60, near: 0.5, far: 600, position: [0, 12, 20] }}
       >
-        <Scene phase={phase} runId={runId} hud={hud} levelId={levelId} onWin={handleWin} />
+        <Scene phase={phase} runId={runId} hud={hud} levelId={levelId} carId={carId} onWin={handleWin} />
       </Canvas>
 
       {phase === "playing" && (
@@ -113,6 +116,49 @@ export function RacingGame() {
                     <div className="font-mono text-xs font-bold text-[#2a2f45]">{l.name}</div>
                     <div className="mt-1 text-[9px] text-[#5b5470] line-clamp-2">{l.tagline}</div>
                   </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2 text-left">
+              <div className="text-[10px] uppercase tracking-widest text-[#5b5470] font-bold">Select Car</div>
+              <div className="grid grid-cols-5 gap-2">
+                {CARS.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setCarId(c.id)}
+                    title={c.name}
+                    className={`rounded-xl border-2 px-1 py-2 transition ${
+                      carId === c.id
+                        ? "border-[#ff6f91] bg-[#ff6f91]/10"
+                        : "border-transparent bg-white/50 hover:bg-white/80"
+                    }`}
+                  >
+                    <div
+                      className="mx-auto h-4 w-4 rounded-full border border-black/10"
+                      style={{ backgroundColor: c.body }}
+                    />
+                    <div className="mt-1 truncate font-mono text-[9px] font-bold text-[#2a2f45]">
+                      {c.name.split(" ")[0]}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-4 gap-3 rounded-xl bg-white/50 px-3 py-2 font-mono">
+                {(["speed", "accel", "grip", "drift"] as const).map((k) => (
+                  <div key={k}>
+                    <div className="text-[8px] uppercase tracking-widest text-[#5b5470]">{k}</div>
+                    <div className="mt-1 flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 w-full rounded-sm ${
+                            i <= selectedCar.stats[k] ? "bg-[#ff6f91]" : "bg-[#2a2f45]/15"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

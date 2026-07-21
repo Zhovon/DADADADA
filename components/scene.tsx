@@ -12,6 +12,7 @@ import { TrackMesh } from "./track-mesh"
 import { EnvironmentDecor } from "./environment-decor"
 import { Environment } from "@react-three/drei"
 import { getLevel } from "@/lib/levels"
+import { getCar } from "@/lib/cars"
 import { Traffic } from "@/lib/traffic"
 import { TrafficCars } from "./traffic-cars"
 import { Opponents } from "@/lib/opponents"
@@ -22,14 +23,16 @@ interface SceneProps {
   runId: number
   hud: RefObject<HudState>
   levelId: string
+  carId: string
   onWin?: () => void
 }
 
 const GATES = [0.25, 0.5, 0.75]
 const LAPS_TO_WIN = 1
 
-export function Scene({ phase, runId, hud, levelId, onWin }: SceneProps) {
+export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) {
   const level = useMemo(() => getLevel(levelId), [levelId])
+  const carModel = useMemo(() => getCar(carId), [carId])
   const track = useMemo(() => createTrack(level.shape), [level])
   const traffic = useMemo(
     () => new Traffic(track, level.trafficCount, level.trafficSpeed, level.shape.seed),
@@ -39,7 +42,7 @@ export function Scene({ phase, runId, hud, levelId, onWin }: SceneProps) {
     () => new Opponents(track, level.shape.seed),
     [track, level],
   )
-  const car = useMemo(() => new CarPhysics(), [])
+  const car = useMemo(() => new CarPhysics(carModel.tuning), [carModel])
   const readInput = useControls()
   const camera = useThree((s) => s.camera)
 
@@ -260,11 +263,11 @@ export function Scene({ phase, runId, hud, levelId, onWin }: SceneProps) {
       <OpponentCars opponents={opponents} />
 
       <group ref={carGroup}>
-        <Car 
-          steerRef={steerRef} 
-          speedRef={speedRef} 
-          variant="hypercar" 
-          colors={{ body: "#e6c300", cabin: "#111111", accent: "#000000" }}
+        <Car
+          steerRef={steerRef}
+          speedRef={speedRef}
+          variant={carModel.variant}
+          colors={{ body: carModel.body, cabin: carModel.cabin, accent: carModel.accent }}
           povMode={cameraMode === "pov"}
         />
       </group>
