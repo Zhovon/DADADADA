@@ -3,7 +3,13 @@
 import { useEffect, useRef, type RefObject } from "react"
 import { formatTime, type HudState } from "@/lib/game-store"
 
+export function ordinal(n: number): string {
+  const suffix = n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"
+  return `${n}${suffix}`
+}
+
 export function Hud({ hud }: { hud: RefObject<HudState> }) {
+  const position = useRef<HTMLSpanElement>(null)
   const speed = useRef<HTMLSpanElement>(null)
   const gear = useRef<HTMLSpanElement>(null)
   const lap = useRef<HTMLSpanElement>(null)
@@ -31,6 +37,8 @@ export function Hud({ hud }: { hud: RefObject<HudState> }) {
       }
       if (lap.current)
         lap.current.textContent = `${Math.min(s.lap, s.totalLaps)}/${s.totalLaps}`
+      if (position.current)
+        position.current.textContent = `${ordinal(s.position)} / ${s.racers}`
       if (current.current) current.current.textContent = formatTime(s.currentLapMs)
       if (last.current) last.current.textContent = formatTime(s.lastLapMs)
       if (best.current) best.current.textContent = formatTime(s.bestLapMs)
@@ -51,6 +59,12 @@ export function Hud({ hud }: { hud: RefObject<HudState> }) {
       {/* top-left: lap timing */}
       <div className="absolute left-4 top-4 rounded-2xl border border-white/40 bg-[#2a2f45]/70 px-5 py-4 text-white backdrop-blur-sm">
         <div className="flex items-baseline gap-2">
+          <span className="text-xs uppercase tracking-widest text-[#9be7c4]">Pos</span>
+          <span ref={position} className="text-2xl font-bold tabular-nums">
+            -
+          </span>
+        </div>
+        <div className="mt-1 flex items-baseline gap-2">
           <span className="text-xs uppercase tracking-widest text-[#ffd0dc]">Lap</span>
           <span ref={lap} className="text-2xl font-bold tabular-nums">
             0

@@ -3,6 +3,7 @@ import type { CarVariant } from "./cars"
 
 export interface OpponentCar {
   frac: number // progress around loop (0..1)
+  laps: number // completed loops, so laps + frac = total race progress
   lane: number // signed lateral offset from centerline
   baseSpeed: number
   speed: number // current speed
@@ -53,6 +54,7 @@ export class Opponents {
       
       const car: OpponentCar = {
         frac,
+        laps: 0,
         lane,
         // High speeds! (in world units, 90 u/s is ~270 km/h)
         baseSpeed: 85 + rand() * 15,
@@ -91,7 +93,7 @@ export class Opponents {
           // Spinning out
           car.angle += 10 * dt
           car.speed *= Math.exp(-2 * dt)
-          car.frac = (car.frac + (car.speed * dt) / len) % 1
+          this.advance(car, dt, len)
           this.place(car)
           continue
         }
@@ -107,9 +109,15 @@ export class Opponents {
         car.lane -= Math.sign(car.lane) * 2 * dt
       }
       
-      car.frac = (car.frac + (car.speed * dt) / len) % 1
+      this.advance(car, dt, len)
       this.place(car)
     }
+  }
+
+  private advance(car: OpponentCar, dt: number, len: number) {
+    const nf = car.frac + (car.speed * dt) / len
+    if (nf >= 1) car.laps++
+    car.frac = nf % 1
   }
 
   bump(index: number, speedKill: number) {

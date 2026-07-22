@@ -55,6 +55,9 @@ export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) 
   const lapStartMs = useRef(0)
   const nextGate = useRef(0)
   const prevFrac = useRef(0)
+  // continuous laps+frac progress for ranking; the gate-based lap counter
+  // can't be used because it only advances at the finish line
+  const playerProgress = useRef(0)
   const accumulator = useRef(0)
   const started = useRef(false)
 
@@ -76,8 +79,11 @@ export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) 
     nextGate.current = 0
     started.current = true // Start immediately
     prevFrac.current = queryTrack(track, car.x, car.z).frac
+    playerProgress.current = 0
     hud.current.lap = 1 // Start on lap 1
     hud.current.totalLaps = LAPS_TO_WIN
+    hud.current.racers = opponents.cars.length + 1
+    hud.current.position = opponents.cars.length + 1 // grid start: opponents ahead
     hud.current.currentLapMs = 0
     hud.current.lastLapMs = 0
     hud.current.bestLapMs = loadBestLap(level.id)
@@ -161,6 +167,12 @@ export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) 
       const frac = q.frac
       const pf = prevFrac.current
       const moving = car.speed > 2
+
+      // wrap-corrected delta keeps progress continuous across the finish line
+      let df = frac - pf
+      if (df > 0.5) df -= 1
+      else if (df < -0.5) df += 1
+      playerProgress.current += df
       if (moving) {
         if (nextGate.current < GATES.length) {
           const g = GATES[nextGate.current]
@@ -196,6 +208,12 @@ export function Scene({ phase, runId, hud, levelId, carId, onWin }: SceneProps) 
       hud.current.driftScore = car.liveScore()
       hud.current.multiplier = car.multiplier
       hud.current.drifting = car.drifting
+
+      let position = 1
+      for (const o of opponents.cars) {
+        if (o.laps + o.frac > playerProgress.current) position++
+      }
+      hud.current.position = position
     } else {
       speedRef.current = 0
     }

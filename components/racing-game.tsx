@@ -7,7 +7,7 @@ import { createHudState, formatTime, loadBestLap } from "@/lib/game-store"
 import { LEVELS } from "@/lib/levels"
 import { CARS, getCar } from "@/lib/cars"
 import { Scene } from "./scene"
-import { Hud } from "./hud"
+import { Hud, ordinal } from "./hud"
 
 type Phase = "menu" | "playing" | "win"
 
@@ -87,6 +87,9 @@ export function RacingGame() {
             <h2 className="mt-2 font-mono text-4xl font-black tracking-tight text-[#2a2f45]">
               FINISH!
             </h2>
+            <p className="mt-2 font-mono text-lg font-bold text-[#ff6f91]">
+              {ordinal(hud.current.position)} of {hud.current.racers}
+            </p>
 
             <div className="mt-6 grid grid-cols-1 gap-2 font-mono text-left">
               <div className="flex items-baseline justify-between rounded-2xl bg-[#2a2f45] px-4 py-3 text-white">

@@ -4,6 +4,8 @@ export interface HudState {
   speed: number // km/h-ish display value
   lap: number
   totalLaps: number
+  position: number // 1-based race position
+  racers: number // total cars in the race (player + opponents)
   currentLapMs: number
   lastLapMs: number
   bestLapMs: number
@@ -17,6 +19,8 @@ export function createHudState(): HudState {
     speed: 0,
     lap: 0,
     totalLaps: 1,
+    position: 1,
+    racers: 1,
     currentLapMs: 0,
     lastLapMs: 0,
     bestLapMs: 0,
